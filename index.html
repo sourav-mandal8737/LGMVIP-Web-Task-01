@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A responsive TODO List WebApp to organize and prioritize tasks.">
+    <meta name="keywords" content="TODO, List, Tasks, Organize, Prioritize, WebApp">
+    <meta name="author" content="Your Name">
+    <title>TODO List WebApp</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #72edf2 10%, #5151e5 100%);
+        }
+        .container {
+            width: 90%;
+            max-width: 500px;
+            background: #fff;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        .input-section .input, .input-section .button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+            box-sizing: border-box; /* Ensure padding and border are included in width */
+        }
+        .input-section .input:focus, .input-section .button:focus {
+            border-color: #5151e5;
+            outline: none;
+        }
+        .input-section .button {
+            background: #5151e5;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: block; /* Ensure the button takes up the full width */
+            margin: auto; /* Center the button horizontally */
+        }
+        .input-section .button:hover {
+            background: #3b3bb7;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        ul li {
+            padding: 15px;
+            background: #fafafa;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            transition: background 0.3s;
+        }
+        ul li:hover {
+            background: #f1f1f1;
+        }
+        ul li span {
+            flex-grow: 1;
+            text-align: left;
+        }
+        ul li .edit-button, ul li .remove-button {
+            background: #ff6b6b;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 5px;
+            transition: background 0.3s;
+        }
+        ul li .edit-button:hover, ul li .remove-button:hover {
+            background: #d9534f;
+        }
+        .edit-mode input {
+            width: calc(100% - 150px);
+            margin-right: 5px;
+        }
+        @media (max-width: 600px) {
+            .input-section .input, .input-section .button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TODO List</h1>
+        <div class="input-section">
+            <input type="text" id="taskInput" class="input" placeholder="Add a new task...">
+            <input type="date" id="taskDate" class="input">
+            <input type="time" id="taskTime" class="input">
+            <button class="button" onclick="addTask()">Add</button>
+        </div>
+        <ul id="taskList"></ul>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (Notification.permission !== 'granted') {
+                Notification.requestPermission();
+            }
+        });
+
+        function addTask() {
+            const taskInput = document.getElementById('taskInput');
+            const taskDate = document.getElementById('taskDate');
+            const taskTime = document.getElementById('taskTime');
+            const taskList = document.getElementById('taskList');
+            const taskText = taskInput.value.trim();
+            const taskDateValue = taskDate.value;
+            const taskTimeValue = taskTime.value;
+
+            if (taskText !== "" && taskDateValue !== "" && taskTimeValue !== "") {
+                const li = document.createElement('li');
+                const taskDateTime = `${taskDateValue}T${taskTimeValue}`;
+                li.innerHTML = `<span>${taskText} - ${taskDateValue} ${taskTimeValue}</span><button class="edit-button" onclick="editTask(this)">Edit</button><button class="remove-button" onclick="removeTask(this)">Remove</button>`;
+                taskList.appendChild(li);
+                taskInput.value = "";
+                taskDate.value = "";
+                taskTime.value = "";
+
+                scheduleNotification(taskText, new Date(taskDateTime));
+            }
+        }
+
+        function removeTask(button) {
+            const li = button.parentElement;
+            li.remove();
+        }
+
+        function editTask(button) {
+            const li = button.parentElement;
+            const span = li.querySelector('span');
+            const [taskText, taskDateTime] = span.innerText.split(' - ');
+            const [taskDate, taskTime] = taskDateTime.split(' ');
+            li.innerHTML = `<input type="text" value="${taskText}" placeholder="Write your task here..."><input type="date" value="${taskDate}"><input type="time" value="${taskTime}"><button class="save-button" onclick="saveTask(this)">Save</button><button class="remove-button" onclick="removeTask(this)">Remove</button>`;
+            li.classList.add('edit-mode');
+        }
+
+        function saveTask(button) {
+            const li = button.parentElement;
+            const inputText = li.querySelector('input[type="text"]');
+            const inputDate = li.querySelector('input[type="date"]');
+            const inputTime = li.querySelector('input[type="time"]');
+            const taskText = inputText.value.trim();
+            const taskDateValue = inputDate.value;
+            const taskTimeValue = inputTime.value;
+
+            if (taskText !== "" && taskDateValue !== "" && taskTimeValue !== "") {
+                const taskDateTime = `${taskDateValue}T${taskTimeValue}`;
+                li.innerHTML = `<span>${taskText} - ${taskDateValue} ${taskTimeValue}</span><button class="edit-button" onclick="editTask(this)">Edit</button><button class="remove-button" onclick="removeTask(this)">Remove</button>`;
+                li.classList.remove('edit-mode');
+
+                scheduleNotification(taskText, new Date(taskDateTime));
+            }
+        }
+
+        function scheduleNotification(taskText, taskDateTime) {
+            const now = new Date();
+            const timeToTask = taskDateTime - now;
+
+            if (timeToTask > 0) {
+                setTimeout(() => {
+                    if (Notification.permission === 'granted') {
+                        new Notification('Task Reminder', {
+                            body: `It's time for: ${taskText}`
+                        });
+                    } else {
+                        alert(`It's time for: ${taskText}`);
+                    }
+                }, timeToTask);
+            }
+        }
+    </script>
+</body>
+</html>
